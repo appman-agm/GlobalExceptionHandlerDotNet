@@ -1,11 +1,8 @@
 name: 'Deploy to NuGet'
+
 on:
-  push:
-    branches:
-      - release # Default release branch
-  pull_request:
-    branches:
-      - release
+    push:
+      branches: [release]
 
 env:
   PROJECT_PATH: 'src\GlobalExceptionHandler\GlobalExceptionHandler.csproj'
@@ -34,8 +31,8 @@ jobs:
       - name: 'Pack project'
         run: dotnet pack ${{ env.PROJECT_PATH }} --no-restore --no-build --configuration Release --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
-      - name: AddGithubSource
-        run: dotnet nuget add source --username ${{secrets.DEPLOY_GITHUB_USER}} --password ${{secrets.DEPLOY_GITHUB_PACKAGE_TOKEN}} --name github https://nuget.pkg.github.com/appman-agm/index.json
+    #   - name: AddGithubSource
+    #     run: dotnet nuget add source --username ${{secrets.DEPLOY_GITHUB_USER}} --password ${{secrets.GITHUB_TOKEN}} --name github https://nuget.pkg.github.com/appman-agm/index.json
 
       - name: PushGithub
-        run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIRECTORY }}\*.nupkg --source github --skip-duplicate --api-key ${{secrets.GITHUB_TOKEN}}
+        run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIRECTORY }}\*.nupkg -k ${{secrets.GITHUB_TOKEN}} -s https://nuget.pkg.github.com/${{github.repository}}/index.json --skip-duplicate
