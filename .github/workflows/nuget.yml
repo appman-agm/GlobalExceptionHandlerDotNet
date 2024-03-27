@@ -1,0 +1,41 @@
+name: 'Deploy to NuGet'
+on:
+  push:
+    branches:
+      - release # Default release branch
+  pull_request:
+    branches:
+      - release
+
+env:
+  PROJECT_PATH: 'src\GlobalExceptionHandler\GlobalExceptionHandler.csproj'
+  PACKAGE_OUTPUT_DIRECTORY: ${{ github.workspace }}\output
+
+jobs:
+  deploy:
+    name: 'Deploy'
+    runs-on: 'windows-latest'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+
+      - name: 'Install dotnet'
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '3.0.x'
+
+      - name: 'Restore packages'
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: 'Build project'
+
+        run: dotnet build ${{ env.PROJECT_PATH }} --no-restore --configuration Release
+
+      - name: 'Pack project'
+        run: dotnet pack ${{ env.PROJECT_PATH }} --no-restore --no-build --configuration Release --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
+
+      - name: AddGithubSource
+        run: dotnet nuget add source --username ${{secrets.DEPLOY_GITHUB_USER}} --password ${{secrets.DEPLOY_GITHUB_PACKAGE_TOKEN}} --name github https://nuget.pkg.github.com/appman-agm/index.json
+
+      - name: PushGithub
+        run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIRECTORY }}\*.nupkg --source github --skip-duplicate --api-key ${{secrets.GITHUB_TOKEN}}
